@@ -5,7 +5,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 
-API_TOKEN_TG = '6066215488:AAGXJP8pJ6WpA3i0tCgYKKdloDPi4QC_Cyw'
+API_TOKEN_TG = 'TokenHere'
 bot = Bot(token=API_TOKEN_TG)
 dp = Dispatcher(bot)
 messageNumber = 0
@@ -13,7 +13,7 @@ messageNumber = 0
 # define the credentials for accessing the Google Sheets API
 scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name('leads-from-tg-697d5491301e.json', scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name('jsonHere', scope)
 client = gspread.authorize(creds)
 
 # open the Google Sheet
