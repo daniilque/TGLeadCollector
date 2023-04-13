@@ -6,12 +6,12 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
 # Инициализация телеграм-бота
-bot_token = '6004481628:AAFagZUopCcfTmGNB9y-JAcOSfOEnKFI6ZY'
+bot_token = 'tokenHere'
 bot = telebot.TeleBot(bot_token)
 
 # Инициализация Google Sheets API
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name('leads-from-tg-697d5491301e.json', scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name('jsonHere', scope)
 client = gspread.authorize(creds)
 spreadsheet = client.open('PS Store Requests')
 sheet = spreadsheet.get_worksheet(0)
@@ -30,23 +30,6 @@ log_pass_error = 'Неправильно введена связка логин:
 
 # Маркер работы
 print('Погнали')
-
-# Забираем ласт номер таблы
-# def get_last_result_num() -> int:
-    
-#     # Получение всех значений в столбце A
-#     values_list = sheet.col_values(1)
-    
-#     # Удаление пустых значений
-#     values_list = list(filter(None, values_list))
-    
-#     # Получение последнего номера результата
-#     if not values_list:
-#         last_result_num = 0
-#     else:
-#         last_result_num = int(values_list[-1])
-    
-#     return last_result_num
 
 def get_last_result_num() -> int:
     last_result_num = sheet.cell(2,1).value
@@ -73,19 +56,6 @@ def get_keyboard(buttons):
         keyboard.add(button)
     return keyboard
 
-# def get_subList_keyboard(buttons):
-#     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-#     d1_button = types.KeyboardButton(text="Deluxe 1 месяц")
-#     d3_button = types.KeyboardButton(text="Deluxe 3 месяца")
-#     d12_button = types.KeyboardButton(text="Deluxe 12 месяцев")
-#     x1_button = types.KeyboardButton(text="Deluxe 1 месяц")
-#     x3_button = types.KeyboardButton(text="Deluxe 3 месяца")
-#     x12_button = types.KeyboardButton(text="Deluxe 12 месяцев")
-#     e1_button = types.KeyboardButton(text="Deluxe 1 месяц")
-#     e3_button = types.KeyboardButton(text="Deluxe 3 месяца")
-#     e12_button = types.KeyboardButton(text="Deluxe 12 месяцев")
-#     keyboard.add(cancel_button)
-#     return keyboard
 
 def get_subList_keyboard():
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
@@ -135,23 +105,6 @@ def has_turkish_account_message(message):
     has_turkish_account = message.text
     bot.send_message(message.chat.id, 'Отлично, тогда напишите, пожалуйста, свой логин и пароль от турецкого аккаунта в формате "email_адрес:пароль", чтобы мы могли проверить наличие подходящих игр и подписок.', reply_markup=get_cancel_keyboard())
 
-# Обработчик ответа на вопрос о логине и пароле от аккаунта
-# @bot.message_handler(commands=['restart'])
-# @bot.message_handler(func=lambda message: chat_status == 'has_turkish_account' or chat_status == 'started' and message.text == 'Нет')
-# def turkish_account_credentials_message(message):
-#     global chat_status, turkish_account_login, turkish_account_password
-#     if has_turkish_account == 'Да' and chat_status == 'has_turkish_account': 
-#         while True:
-#             try: 
-#                 turkish_account_login, turkish_account_password = message.text.split(':')
-#                 break
-#             except: 
-#                 bot.send_message(message.chat.id, log_pass_error)
-#             break
-
-#     chat_status = 'user_choice'
-#     bot.send_message(message.chat.id, 'Что вас интересует - игра или подписка?', reply_markup=get_keyboard(['Игра', 'Подписка']))
-
 @bot.message_handler(commands=['restart'])
 @bot.message_handler(func=lambda message: chat_status == 'has_turkish_account' or chat_status == 'started' and message.text == 'Нет')
 def turkish_account_credentials_message(message):
@@ -174,20 +127,6 @@ def get_turkish_account_credentials(message):
         bot.send_message(message.chat.id, log_pass_error)
         bot.register_next_step_handler(message, get_turkish_account_credentials)
     
-
-# # Обработчик ответа на вопрос о выборе пользователя
-# @bot.message_handler(func=lambda message: chat_status == 'user_choice' and message.text == 'Подписка')
-# def user_choice_message(message):
-#     global chat_status, user_choice, sub_type, price
-#     chat_status = 'order_confirmation'
-#     user_choice = message.text    
-#     sub_type = 'Deluxe 12 месяцев'
-#     cell = sheet_2.find(sub_type)
-#     row_number = cell.row
-#     price = sheet_2.cell(row_number, 2).value
-#     price = sheet.cell(2, 2).value
-#     bot.send_message(message.chat.id, f"Вы выбрали подписку {sub_type} за {price}₺. Хотите подтвердить заказ?", reply_markup=get_confirmation_keyboard())
-
  # Обработчик ответа выбора подписки
 @bot.message_handler(func=lambda message: chat_status == 'user_choice' and message.text == 'Подписка')
 def user_choice_message(message):
@@ -218,21 +157,6 @@ def user_choice_message(message):
 
     bot.send_message(message.chat.id, f"Вы выбрали подписку {sub_type} за {price}₺. Хотите подтвердить заказ?", reply_markup=get_confirmation_keyboard())
  
-
-# # Обработчик ответа на вопрос об игре
-# @bot.message_handler(func=lambda message: chat_status == 'user_choice' and message.text == 'Игра')
-# def game_choice_message(message):
-#     global chat_status, price
-#     chat_status = 'game_confirmation'
-#     price = sheet.cell(2, 2).value
-#     bot.send_message(message.chat.id, "Введите название игры на английском языке", reply_markup=get_cancel_keyboard())
-
-# # Обработчик ответа на вопрос о названии игры
-# @bot.message_handler(func=lambda message: chat_status == 'game_confirmation')
-# def game_confirmation_message(message):
-#     global chat_status, game_name
-#     game_name = message.text
-#     bot.send_message(message.chat.id, f"Вы выбрали игру {game_name} за {price}₺. Хотите подтвердить заказ?", reply_markup=get_confirmation_keyboard())
 
 # Обработчик ответа на вопрос об игре
 @bot.message_handler(func=lambda message: chat_status == 'user_choice' and message.text == 'Игра')
