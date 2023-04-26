@@ -12,7 +12,7 @@ bot = telebot.TeleBot(bot_token)
 
 # Инициализация Google Sheets API
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name('leads-from-tg.json', scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name('leads-from-tg-697d5491301e.json', scope)
 client = gspread.authorize(creds)
 spreadsheet = client.open('PS Store Requests')
 sheet = spreadsheet.get_worksheet(0)
@@ -35,6 +35,7 @@ price_error = 'Неправильно введена стоимость игры
 
 # Маркер работы
 print('Погнали')
+
 
 # Последняя цифра заказа
 def get_last_result_num() -> int:
@@ -83,6 +84,19 @@ def get_subLen_keyboard():
     _12_button = types.KeyboardButton(text="12 месяцев")
     keyboard.add(_1_button, _3_button, _12_button)
     return keyboard
+
+
+# Создаем объект клавиатуры
+urlkb = types.InlineKeyboardMarkup()
+
+# Создаем кнопки со ссылками
+urlButton1 = types.InlineKeyboardButton(text='Наша страница на Авито', url='https://www.avito.ru/voronezh/igry_pristavki_i_programmy/ps_plyus_turtsiya_2909166258')
+urlButton2 = types.InlineKeyboardButton(text='Наша страница на Авито №2', url='https://www.avito.ru/novosibirsk/igry_pristavki_i_programmy/podpiska_ps_plus_2908872126')
+urlButton3 = types.InlineKeyboardButton(text='Наш Instagram Аккаунт', url='https://www.instagram.com/turk_sub_store/')
+urlButton4 = types.InlineKeyboardButton(text='Связаться с администратором', url='https://t.me/plusturkadmin/')
+
+# Добавляем кнопки на клавиатуру
+urlkb.add(urlButton1, urlButton2, urlButton3, urlButton4)
 
 
 # Функция для отправки сообщения в чат с id=-1001830767950
@@ -134,7 +148,7 @@ def start_message(message):
         bot.send_message(message.chat.id, f'Здравствуйте, {message.chat.username}! Ваши активные заказы:', reply_markup=get_keyboard(['Продолжить']))
         send_orders(orders_list, orders_done, message.chat.id)
     else:
-        bot.send_message(message.chat.id, 'Здравствуйте! Есть ли у вас турецкий аккаунт PS Store?', reply_markup=get_keyboard(['Да', 'Нет']))
+        bot.send_message(message.chat.id, 'Здравствуйте! Есть ли у вас турецкий аккаунт PS Store?', reply_markup=get_keyboard(['Да', 'Нет', 'Наши ссылки']))
 
 # Обработчик отмены заказа
 @bot.message_handler(func=lambda message: message.text == 'Отмена')
@@ -159,7 +173,7 @@ def turkish_account_credentials_message(message):
         get_turkish_account_credentials(message)
     else:
         chat_status = 'user_choice'
-        bot.send_message(message.chat.id, 'Что вас интересует - игра или подписка?', reply_markup=get_keyboard(['Игра', 'Подписка']))
+        bot.send_message(message.chat.id, 'Что вас интересует - игра или подписка?', reply_markup=get_keyboard(['Игра', 'Подписка', 'Наши ссылки']))
 
 
 def get_turkish_account_credentials(message):
@@ -283,12 +297,16 @@ def confirm_order_message(message):
     # cell_list[4].formula = "=IF(K2='Исполнен'; I2-(M2+N2+P2)-(O2*Прайсы!$Q$31); 0)"
     # sheet.update_cells(cell_list)
 
-    bot.send_message(message.chat.id, f"Спасибо за заказ!\n{restart_msg}")
-    
+    # Обработчик отмены заказа
 
+
+    bot.send_message(message.chat.id, f"Спасибо за заказ!\n{restart_msg}")
     send_notification(f"Новый заказ!\nВремя заказа: {order_time}\nChat ID: {message.chat.id}\nLogin: @{a_username}\nНаличие турецкого аккаунта: {has_turkish_account}\nЛогин от турецкого аккаунта: {turkish_account_login}\nВыбор пользователя: {user_choice}\nНазвание: {user_final_choise}\nЦена: {price}₺")
     bot.forward_message(manager_chatid, from_chat_id=message.chat.id, message_id=message.message_id) 
-   
+
+@bot.message_handler(func=lambda message: message.text == 'Наши ссылки')
+def urls(message):
+    bot.send_message(message.chat.id, 'Полезные ссылки:', reply_markup=urlkb)
 
 # Запуск бота
 bot.polling(none_stop=True)
