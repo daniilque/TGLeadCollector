@@ -89,14 +89,12 @@ def get_subLen_keyboard():
 # Создаем объект клавиатуры
 urlkb = types.InlineKeyboardMarkup()
 
-# Создаем кнопки со ссылками
-urlButton1 = types.InlineKeyboardButton(text='Наша страница на Авито', url='https://www.avito.ru/voronezh/igry_pristavki_i_programmy/ps_plyus_turtsiya_2909166258')
-urlButton2 = types.InlineKeyboardButton(text='Наша страница на Авито №2', url='https://www.avito.ru/novosibirsk/igry_pristavki_i_programmy/podpiska_ps_plus_2908872126')
-urlButton3 = types.InlineKeyboardButton(text='Наш Instagram Аккаунт', url='https://www.instagram.com/turk_sub_store/')
-urlButton4 = types.InlineKeyboardButton(text='Связаться с администратором', url='https://t.me/plusturkadmin/')
+# # Создаем кнопки со ссылками
+# urlkb.add(types.InlineKeyboardButton(text='Наша страница на Авито', url='https://www.avito.ru/voronezh/igry_pristavki_i_programmy/ps_plyus_turtsiya_2909166258'))
+# urlkb.add(types.InlineKeyboardButton(text='Наша страница на Авито №2', url='https://www.avito.ru/novosibirsk/igry_pristavki_i_programmy/podpiska_ps_plus_2908872126'))
+urlkb.add(types.InlineKeyboardButton(text='Наш Instagram Аккаунт', url='https://www.instagram.com/turk_sub_store/'))
+urlkb.add(types.InlineKeyboardButton(text='Связаться с администратором', url='https://t.me/plusturkadmin/'))
 
-# Добавляем кнопки на клавиатуру
-urlkb.add(urlButton1, urlButton2, urlButton3, urlButton4)
 
 
 # Функция для отправки сообщения в чат с id=-1001830767950
@@ -291,15 +289,6 @@ def confirm_order_message(message):
                       order_time, 
                       'В работе',], 2)
     
-    # cell_list = sheet.range('M2:Q2')
-    # cell_list[0].formula = "=VLOOKUP(H2; 'Прайсы'!$A$27:$C$35; 3; FALSE)"
-    # cell_list[1].formula = "=VLOOKUP(H2; 'Прайсы'!$A$27:$D$35; 4; FALSE)"
-    # cell_list[4].formula = "=IF(K2='Исполнен'; I2-(M2+N2+P2)-(O2*Прайсы!$Q$31); 0)"
-    # sheet.update_cells(cell_list)
-
-    # Обработчик отмены заказа
-
-
     bot.send_message(message.chat.id, f"Спасибо за заказ!\n{restart_msg}")
     send_notification(f"Новый заказ!\nВремя заказа: {order_time}\nChat ID: {message.chat.id}\nLogin: @{a_username}\nНаличие турецкого аккаунта: {has_turkish_account}\nЛогин от турецкого аккаунта: {turkish_account_login}\nВыбор пользователя: {user_choice}\nНазвание: {user_final_choise}\nЦена: {price}₺")
     bot.forward_message(manager_chatid, from_chat_id=message.chat.id, message_id=message.message_id) 
