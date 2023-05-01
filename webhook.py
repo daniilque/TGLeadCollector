@@ -1,34 +1,58 @@
-﻿import telebot
-from flask import Flask, request, redirect
+from flask import Flask, request, jsonify
 import hashlib
-from flask_sslify import SSLify
+import json
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 
-@app.route('/caba05a2af6d5d46ee7bc83959d06338', methods=['POST'])
+scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name('leads-from-tg-697d5491301e.json', scope)
+client = gspread.authorize(creds)
+spreadsheet = client.open('PS Store Requests')
+sheet = spreadsheet.get_worksheet(0)
+
+@app.route('/free-kassa-notification', methods=['POST'])
 def free_kassa_notification():
-    data = request.form.to_dict()
-    if data['m_operation_id'] and data['m_sign']:
-        # Проверка подписи
-        sign = data['m_sign']
-        del data['m_sign']
-        secret_key = "YOUR_FREE_KASSA_SECRET_KEY"
-        check_sign = sorted(data.values()) + [secret_key]
-        check_sign = "".join(check_sign).encode('utf-8')
-        check_sign = hashlib.md5(check_sign).hexdigest()
-        if sign == check_sign:
-            # Подтверждение приема уведомления
-            return 'YES'
-        else:
-            # Ошибка подписи
-            return 'ERROR'
+    # sender_ip = request.remote_addr
+    # if sender_ip not in FREEKASSA_IPS:
+    #     return 'Forbidden', 403
+    # else:
+    secret_word_1 = ''  # Первое секретное слово
+    secret_word_2 = ''  # Второе секретное слово
+    merchant_id = 12345  # Номер вашего магазина
+    order_id = request.form.get('MERCHANT_ORDER_ID')  # Номер заказа
+    amount = request.form.get('AMOUNT')  # Сумма оплаты
+    sign = request.form.get('SIGN')  # Подпись запроса
+
+    # Генерируем подпись запроса
+    sign_str = f'{merchant_id}:{amount}:{secret_word_1}:{order_id}:{secret_word_2}'
+    sign_hash = hashlib.md5(sign_str.encode('utf-8')).hexdigest()
+
+    # Проверяем правильность подписи
+    if sign == sign_hash:
+        # Подпись верна, обрабатываем оплату
+        # Создаем клиент для работы с Google Sheets
+  
+
+        # Добавляем новую запись
+        row = [order_id, amount, 'оплачен']
+        sheet.append_row(row)
+
+        # Возвращаем ответ FreeKassa
+        return jsonify({'status': 'success'})
     else:
-        # Ошибка в данных
-        return 'ERROR'
+        # Подпись неверна, отклоняем оплату
+        return jsonify({'status': 'error'})
+
+
+@app.route('/free-kassa-notification', methods=['GET'])
+def FKStatus():
+    return 'Free-Kassa webhook is running'
 
 @app.route('/', methods=['GET'])
 def index():
-    return 'Free-Kassa webhook is running'
+    return 'Ну привет'
 
 @app.route('/hehe', methods=['GET'])
 def hehe():
