@@ -12,14 +12,15 @@ client = gspread.authorize(creds)
 spreadsheet = client.open('PS Store Requests')
 sheet = spreadsheet.get_worksheet(0)
 
+
 @app.route('/free-kassa-notification', methods=['POST'])
 def free_kassa_notification():
     # sender_ip = request.remote_addr
     # if sender_ip not in FREEKASSA_IPS:
     #     return 'Forbidden', 403
     # else:
-    secret_word_1 = ''  # Первое секретное слово
-    secret_word_2 = ''  # Второе секретное слово
+    secret_word_1 = '8%TH'  # Первое секретное слово
+    secret_word_2 = 'u2IU'  # Второе секретное слово
     merchant_id = 12345  # Номер вашего магазина
     order_id = request.form.get('MERCHANT_ORDER_ID')  # Номер заказа
     amount = request.form.get('AMOUNT')  # Сумма оплаты
