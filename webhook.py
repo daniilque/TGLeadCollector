@@ -3,6 +3,7 @@ from flask import Flask, request, redirect
 import hashlib
 from flask_sslify import SSLify
 
+app = Flask(__name__)
 
 @app.route('/caba05a2af6d5d46ee7bc83959d06338', methods=['POST'])
 def free_kassa_notification():
