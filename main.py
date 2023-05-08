@@ -1,3 +1,7 @@
+import logging
+import asyncio
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
 import telebot
 from telebot import types
 import requests
@@ -8,7 +12,10 @@ from datetime import datetime
 
 # Инициализация телеграм-бота
 bot_token = 'token'
-bot = telebot.TeleBot(bot_token)
+logging.basicConfig(level=logging.INFO)
+
+bot = Bot(token=bot_token)
+dp = Dispatcher(bot)
 
 # Инициализация Google Sheets API
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -134,8 +141,8 @@ def send_orders(orders, orders_done, chat_id):
     bot.send_message(chat_id, f'Завершенных заказов на этой неделе: {orders_done}')
 
 # Обработчик команды /start
-@bot.message_handler(commands=['start'])
-def start_message(message):
+@dp.message_handler(commands=['start'])
+async def start_message(message):
     global chat_status, turkish_account_login, turkish_account_password
     chat_status = 'started'
     turkish_account_login = 'Нет'
@@ -149,23 +156,23 @@ def start_message(message):
         bot.send_message(message.chat.id, 'Здравствуйте! Есть ли у вас турецкий аккаунт PS Store?', reply_markup=get_keyboard(['Да', 'Нет', 'Наши ссылки']))
 
 # Обработчик отмены заказа
-@bot.message_handler(func=lambda message: message.text == 'Отмена')
-def cancel_order_message(message):
+@dp.message_handler(func=lambda message: message.text == 'Отмена')
+async def cancel_order_message(message):
     global chat_status
     chat_status = ''
     bot.send_message(message.chat.id, f"Заказ отменен. {restart_msg}")
 
 # Обработчик ответа на вопрос о наличии аккаунта
-@bot.message_handler(func=lambda message: chat_status == 'started' and message.text == 'Да')
-def has_turkish_account_message(message):
+@dp.message_handler(func=lambda message: chat_status == 'started' and message.text == 'Да')
+async def has_turkish_account_message(message):
     global chat_status, has_turkish_account
     chat_status = 'has_turkish_account'
     has_turkish_account = message.text
     bot.send_message(message.chat.id, 'Отлично, тогда напишите, пожалуйста, свой логин и пароль от турецкого аккаунта в формате "email_адрес:пароль", чтобы мы могли проверить наличие подходящих игр и подписок.', reply_markup=get_cancel_keyboard())
 
-@bot.message_handler(commands=['restart'])
-@bot.message_handler(func=lambda message: chat_status == 'has_turkish_account' or chat_status == 'started' and message.text == 'Нет')
-def turkish_account_credentials_message(message):
+@dp.message_handler(commands=['restart'])
+@dp.message_handler(func=lambda message: chat_status == 'has_turkish_account' or chat_status == 'started' and message.text == 'Нет')
+async def turkish_account_credentials_message(message):
     global chat_status, turkish_account_login, turkish_account_password
     if has_turkish_account == 'Да' and chat_status == 'has_turkish_account': 
         get_turkish_account_credentials(message)
@@ -174,7 +181,7 @@ def turkish_account_credentials_message(message):
         bot.send_message(message.chat.id, 'Что вас интересует - игра или подписка?', reply_markup=get_keyboard(['Игра', 'Подписка', 'Наши ссылки']))
 
 
-def get_turkish_account_credentials(message):
+async def get_turkish_account_credentials(message):
     global chat_status, turkish_account_login, turkish_account_password
     try: 
         turkish_account_login, turkish_account_password = message.text.split(':')
@@ -185,24 +192,24 @@ def get_turkish_account_credentials(message):
         bot.register_next_step_handler(message, get_turkish_account_credentials)
     
  # Обработчик ответа выбора подписки
-@bot.message_handler(func=lambda message: chat_status == 'user_choice' and message.text == 'Подписка')
-def user_choice_message(message):
+@dp.message_handler(func=lambda message: chat_status == 'user_choice' and message.text == 'Подписка')
+async def user_choice_message(message):
     global chat_status, user_choice
     chat_status = 'sub_type_choise'
     user_choice = 'Подписка'   
     bot.send_message(message.chat.id, "Какой тип подписки вас интересует?", reply_markup=get_subList_keyboard()) 
 
 # Обработчик выбора срока подписки
-@bot.message_handler(func=lambda message: chat_status == 'sub_type_choise')
-def user_choice_message(message):
+@dp.message_handler(func=lambda message: chat_status == 'sub_type_choise')
+async def user_choice_message(message):
     global chat_status, sub_cat, sub_len
     sub_cat = message.text
     chat_status = 'sub_len_choise'    
     bot.send_message(message.chat.id, "На какой срок?", reply_markup=get_subLen_keyboard())
 
 # Обработчик ответа на вопрос о выборе пользователя
-@bot.message_handler(func=lambda message: chat_status == 'sub_len_choise')
-def user_choice_message(message):
+@dp.message_handler(func=lambda message: chat_status == 'sub_len_choise')
+async def user_choice_message(message):
     global chat_status, sub_type, sub_price
     sub_len = message.text
     chat_status = 'order_confirmation' 
@@ -215,16 +222,16 @@ def user_choice_message(message):
     
  
 # Обработчик ответа на вопрос об игре
-@bot.message_handler(func=lambda message: chat_status == 'user_choice' and message.text == 'Игра')
-def game_choice_message(message):
+@dp.message_handler(func=lambda message: chat_status == 'user_choice' and message.text == 'Игра')
+async def game_choice_message(message):
     global chat_status, user_choice
     chat_status = 'game_info'
     user_choice = 'Игра'
     bot.send_message(message.chat.id, f'Продажа игр происходит по следующему курсу:\n5₽ за 1₺ при покупке до 500₺\n4,8₽ за 1₺ при покупке от 500₺ до 1000₺\n4,5₽ за 1₺ при покупке от 1000₺\n\nПосле оплаты вы получите данные одноразовой виртуальной карты номиналом на указанную стоимость.\nНеобходимо использовать эту карту для проведения одного платежа на всю сумму, так как неиспользованные деньги на балансе карты сгорают после одной оплаты.\nК сожалению этот метод не работает с подписками\n\nВведите стоимость игры в лирах (только цифры)', reply_markup=get_cancel_keyboard())
 
 # Обработчик стоимости игры
-@bot.message_handler(func=lambda message: chat_status == 'game_info')
-def game_choice_message(message):
+@dp.message_handler(lambda message: chat_status == 'game_info')
+async def game_choice_message(message: types.Message):
     global chat_status, user_choice, price, price_rub
     chat_status = 'game_confirmation'
     try:
@@ -235,66 +242,83 @@ def game_choice_message(message):
             price_rub = price * 4.8
         else:
             price_rub = price * 4.5
-        bot.send_message(message.chat.id, f'Стоимость игры: {round(price_rub, 2)} рублей. Хотите подтвердить заказ?', reply_markup=get_keyboard(['Да', 'Указать другую сумму', 'Отмена']))
-    except:
-        bot.send_message(message.chat.id, price_error)
-        bot.register_next_step_handler(message, game_choice_message)
+        await bot.send_message(
+            message.chat.id,
+            f'Стоимость игры: {round(price_rub, 2)} рублей. Хотите подтвердить заказ?',
+            reply_markup=get_keyboard(['Да', 'Указать другую сумму', 'Отмена'])
+        )
+    except ValueError:
+        await bot.send_message(message.chat.id, price_error)
+        await game_choice_message(message)
 
-@bot.message_handler(func=lambda message: chat_status == 'game_confirmation')
-def game_confirmation(message):
+
+@dp.message_handler(lambda message: chat_status == 'game_confirmation')
+async def game_confirmation(message: types.Message):
     if message.text == 'Да':
-        bot.register_next_step_handler(message, confirm_order_message(message))
+        await confirm_order_message(message)
     elif message.text == 'Указать другую сумму':
         # возвращаем пользователя на предыдущий шаг
         chat_status = 'game_info'
-        bot.send_message(message.chat.id, 'Введите другую сумму')
-        bot.register_next_step_handler(message, game_choice_message)
- 
+        await bot.send_message(message.chat.id, 'Введите другую сумму')
+        await game_choice_message(message)
+
 
 # Обработчик подтверждения заказа
-@bot.message_handler(func=lambda message: chat_status in ['order_confirmation', 'game_confirmation'] and message.text == 'Да')
-def confirm_order_message(message):
+@dp.message_handler(lambda message: message.text == 'Да' and chat_status in ['order_confirmation', 'game_confirmation'])
+async def confirm_order_message(message: types.Message):
     global chat_status
     a_username = message.chat.username
     chat_status = 'order_confirmed'
     last_result_num = get_last_result_num()
     order_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     if user_choice == 'Подписка':
-        user_final_choise = sub_type
+        user_final_choice = sub_type
         price = sub_price
     else:
-        user_final_choise = user_choice
+        user_final_choice = user_choice
         price = price_rub
     try:
-        nameSurname = message.chat.first_name + ' ' + message.chat.last_name
-    except:
+        name_surname = message.chat.first_name + ' ' + message.chat.last_name
+    except TypeError:
         try:
-            nameSurname = message.chat.first_name
-        except:
-            nameSurname = 'Null'
+            name_surname = message.chat.first_name
+        except TypeError:
+            name_surname = 'Null'
     try:
         contact = message.contact.phone_number
-    except:
+    except AttributeError:
         contact = 'Null'
     print(user_choice)
-    sheet.insert_row([int(last_result_num) + 1, 
-                      message.chat.id, 
-                      a_username, 
-                      nameSurname, 
-                      contact, 
-                      turkish_account_login, 
-                      turkish_account_password, 
-                      user_final_choise, 
-                      price, 
-                      order_time, 
-                      'В работе',], 2)
-    
-    bot.send_message(message.chat.id, f"Спасибо за заказ!\n{restart_msg}")
-    send_notification(f"Новый заказ!\nВремя заказа: {order_time}\nChat ID: {message.chat.id}\nLogin: @{a_username}\nНаличие турецкого аккаунта: {has_turkish_account}\nЛогин от турецкого аккаунта: {turkish_account_login}\nВыбор пользователя: {user_choice}\nНазвание: {user_final_choise}\nЦена: {price}₺")
-    bot.forward_message(manager_chatid, from_chat_id=message.chat.id, message_id=message.message_id) 
+    sheet.insert_row([
+        int(last_result_num) + 1,
+        message.chat.id,
+        a_username,
+        name_surname,
+        contact,
+        turkish_account_login,
+        turkish_account_password,
+        user_final_choice,
+        price,
+        order_time,
+        'В работе',
+    ], 2)
 
-@bot.message_handler(func=lambda message: message.text == 'Наши ссылки')
-def urls(message):
+    await bot.send_message(message.chat.id, f"Спасибо за заказ!\n{restart_msg}")
+    send_notification(
+        f"Новый заказ!\n"
+        f"Время заказа: {order_time}\n"
+        f"Chat ID: {message.chat.id}\n"
+        f"Login: @{a_username}\n"
+        f"Наличие турецкого аккаунта: {has_turkish_account}\n"
+        f"Логин от турецкого аккаунта: {turkish_account_login}\n"
+        f"Выбор пользователя: {user_choice}\n"
+        f"Название: {user_final_choice}\n"
+        f"Цена: {price}₺"
+        )
+    await bot.forward_message(manager_chatid, from_chat_id=message.chat.id, message_id=message.message_id) 
+
+@dp.message_handler(func=lambda message: message.text == 'Наши ссылки')
+async def urls(message):
     bot.send_message(message.chat.id, 'Полезные ссылки:', reply_markup=urlkb)
 
 # Запуск бота
